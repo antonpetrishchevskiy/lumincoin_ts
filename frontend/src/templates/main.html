@@ -1,0 +1,32 @@
+<div class="wrap-container d-flex flex-column m-5 w-100">
+    <div class="wrap-container-title mt-5 fs-1 fw-medium">Главная</div>
+    <div class="wrap-buttons d-flex align-items-center gap-3 mt-5">
+        <button type="button" class="btn btn-period btn-outline-secondary fs-5 fw-medium" disabled>Сегодня</button>
+        <button type="button" class="btn btn-period btn-outline-secondary fs-5 fw-medium">Неделя</button>
+        <button type="button" class="btn btn-period btn-outline-secondary fs-5 fw-medium">Месяц</button>
+        <button type="button" class="btn btn-period btn-outline-secondary fs-5 fw-medium">Год</button>
+        <button type="button" class="btn btn-period btn-outline-secondary fs-5 fw-medium">Все</button>
+        <div>
+            <button type="button" class="btn btn-period btn-outline-secondary fs-5 fw-medium">Интервал</button>
+            <span class="fs-5 fw-medium">c</span>
+            <input type="text" class="fw-medium text-secondary inactive dataInput" id="dataInputFrom" placeholder="Дата" value="">
+            <span class="fs-5 fw-medium">по</span>
+            <input type="text" class="fw-medium text-secondary inactive dataInput" id="dataInputTo" placeholder="Дата" value="">
+        </div>
+    </div>
+    <div class="wrap-graphics d-flex align-items-center pb-5">
+        <div class="d-flex flex-column pb-5">
+            <div class="graphic-title mt-4 pt-5 text-center fs-3 fw-medium">Доходы</div>
+            <canvas id="myChart"></canvas>
+        </div>
+
+        <div class="graphics-line-block">
+            <div class="graphics-line"></div>
+        </div>
+
+        <div class="d-flex flex-column pb-5">
+            <div class="graphic-title mt-4 pt-5 text-center fs-3 fw-medium">Расходы</div>
+            <canvas id="myChart2"></canvas>
+        </div>
+    </div>
+</div>

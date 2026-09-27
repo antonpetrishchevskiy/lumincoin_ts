@@ -1,0 +1,22 @@
+<div class="wrap-container d-flex flex-column m-5 w-100">
+    <div class="wrap-container-title mt-5 fs-1 fw-medium">Доходы и расходы</div>
+    <div class="create-buttons mt-4 d-flex gap-3">
+        <a href="/generals/create" class="btn btn-success btn-create" type="income">Создать доход</a>
+        <a href="/generals/create" class="btn btn-danger btn-create" type="expense">Создать расход</a>
+    </div>
+    <div class="wrap-buttons d-flex align-items-center gap-3 mt-5">
+        <button type="button" class="btn btn-period btn-outline-secondary fs-5 fw-medium" disabled>Сегодня</button>
+        <button type="button" class="btn btn-period btn-outline-secondary fs-5 fw-medium">Неделя</button>
+        <button type="button" class="btn btn-period btn-outline-secondary fs-5 fw-medium">Месяц</button>
+        <button type="button" class="btn btn-period btn-outline-secondary fs-5 fw-medium">Год</button>
+        <button type="button" class="btn btn-period btn-outline-secondary fs-5 fw-medium">Все</button>
+        <div>
+            <button type="button" class="btn btn-period btn-outline-secondary fs-5 fw-medium">Интервал</button>
+            <span class="fs-5 fw-medium">c</span>
+            <input type="text" class="fw-medium text-secondary dataInput inactive" id="dataInputFrom" placeholder="Дата" value="">
+            <span class="fs-5 fw-medium">по</span>
+            <input type="text" class="fw-medium text-secondary dataInput inactive" id="dataInputTo" placeholder="Дата" value="">
+        </div>
+    </div>
+    <div id="wrapperGeneralTable"></div>
+</div>

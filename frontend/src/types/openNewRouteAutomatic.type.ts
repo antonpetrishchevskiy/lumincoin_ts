@@ -1,0 +1,1 @@
+export type OpenNewRouteAutomaticType = (url: string) => Promise<void>

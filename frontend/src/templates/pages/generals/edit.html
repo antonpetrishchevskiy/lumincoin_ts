@@ -1,0 +1,35 @@
+<div class="wrap-container d-flex flex-column m-5">
+    <div class="wrap-container-title pt-5 fs-1 fw-medium">Редактирование дохода/расхода</div>
+    <form class="mt-5">
+        <div class="mb-3">
+            <select class="form-control" id="typeCreateGeneralElement">
+                <option value="" disabled selected>Тип...</option>
+                <option value="expense">расход</option>
+                <option value="income">доход</option>
+            </select>
+            <span class="error">Заполните тип</span>
+        </div>
+        <div class="mb-3">
+            <select class="form-control" id="categoryCreateGeneralElement">
+                <option value="" disabled selected>Категория...</option>
+            </select>
+            <span class="error">Заполните категорию</span>
+        </div>
+        <div class="mb-3">
+            <input type="text" class="form-control" id="sumEditGeneralElement" placeholder="Сумма в $..." value="500$">
+            <span class="error">Заполните сумму</span>
+        </div>
+        <div class="mb-3">
+            <input type="text" class="form-control" id="dataEditGeneralElement" placeholder="Дата..." value="11.09.2022">
+            <span class="error">Заполните дату (ГГГГ-ММ-ДД)</span>
+        </div>
+        <div class="mb-3">
+            <input type="text" class="form-control" id="commentEditGeneralElement" placeholder="Комментарий..." value="">
+            <span class="error">Заполните комментарий</span>
+        </div>
+        <div class="create-buttons d-flex gap-3">
+            <button type="button" class="btn btn-success" id="saveBtn">Сохранить</button>
+            <button type="button" class="btn btn-danger" id="cancelBtn">Отмена</button>
+        </div>
+    </form>
+</div>

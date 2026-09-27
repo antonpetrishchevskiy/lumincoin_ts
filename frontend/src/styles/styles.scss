@@ -1,0 +1,84 @@
+@use "layout";
+@use "common";
+
+html,
+body {
+  height: 100%;
+}
+
+.form-signin {
+  max-width: 397px;
+}
+
+.form-signin input {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+input.form-control {
+  max-width: 397px;
+}
+
+input.form-control:focus {
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25); /* Стандартная тень Bootstrap */
+}
+
+.enter-title {
+  color: #052c65;
+}
+
+.form-floating>.form-control-plaintext~label::after, .form-floating>.form-control:focus~label::after, .form-floating>.form-control:not(:placeholder-shown)~label::after, .form-floating>.form-select~label::after {
+  height: 2px;
+}
+
+.form-floating>.form-control, .form-floating>.form-control-plaintext, .form-floating>.form-select {
+  height: 40px;
+  min-height: 40px;
+  font-size: 15px;
+  line-height: 1px;
+}
+
+.wrap-icon {
+  border-top-left-radius: 5px;
+  border-bottom-left-radius: 5px;
+  position: relative;
+  z-index: 2;
+  width: 40px;
+  background: #e9ecef;
+  border-left: 1px solid #ced4da;
+  border-top: 1px solid #ced4da;
+  border-bottom: 1px solid #ced4da;
+  transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+}
+
+input.form-control.logOrSign {
+  border-left: none;
+}
+
+input.form-control.logOrSign:focus {
+  box-shadow: 3px 0 0 3px rgba(13, 110, 253, 0.25);
+  border-left-color: transparent !important;
+}
+
+.form-control:focus + label + .wrap-icon,
+.wrap-icon:has(+ .form-floating .form-control:focus) {
+  position: relative;
+  z-index: 3;
+  box-shadow: -3px 0 0 3px rgba(13, 110, 253, 0.25);
+  border-left: 1px solid #80bdff;
+  border-top: 1px solid #80bdff;
+  border-bottom: 1px solid #80bdff;
+}
+
+.error {
+  display: none;
+  color: red;
+}
+
+.invalid {
+  border-color: red;
+}
+
+.error.invalid {
+  display: block;
+}

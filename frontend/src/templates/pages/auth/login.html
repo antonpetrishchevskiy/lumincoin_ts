@@ -1,0 +1,38 @@
+<div class="auth-wrap d-flex align-items-center justify-content-center w-100">
+    <div class="form-signin w-100 m-auto p-3">
+        <form>
+            <img class="mb-4 d-block mx-auto" src="/static/images/logo.png" alt="" width="171" height="70">
+            <h1 class="h3 mb-3 text-center enter-title fs-1 fw-medium">Вход</h1>
+            <div class="mb-2 text-center text-danger" id="error-login"></div>
+            <div class="d-flex input-block">
+                <div class="wrap-icon d-flex align-items-center justify-content-center p-2">
+                    <i class="far fa-envelope-open text-secondary"></i>
+                </div>
+                <div class="form-floating w-100">
+                    <input type="email" class="form-control logOrSign pt-4" id="loginEmail"
+                           placeholder="Электронная почта">
+                    <label for="loginEmail" class="d-flex align-items-center text-secondary">Электронная почта</label>
+                </div>
+            </div>
+            <div class="error mb-2 text-danger">Заполните email</div>
+            <div class="d-flex mt-2 input-block">
+                <div class="wrap-icon d-flex align-items-center justify-content-center p-2">
+                    <i class="fas fa-lock text-secondary"></i>
+                </div>
+                <div class="form-floating w-100">
+                    <input type="password" class="form-control logOrSign pt-4" id="loginPassword" placeholder="Пароль">
+                    <label for="loginPassword" class="d-flex align-items-center text-secondary">Пароль</label>
+                </div>
+            </div>
+            <div class="error mb-2 text-danger">Заполните поле (не менее 6 символов)</div>
+            <div class="form-check text-start my-3">
+                <input class="form-check-input" type="checkbox" value="remember-me" id="remember-meInput">
+                <label class="form-check-label" for="remember-meInput">
+                    Запомнить меня
+                </label>
+            </div>
+            <button id="loginBtn" class="btn btn-primary w-100 mb-1 mt-3" type="button">Войти</button>
+            <p class="mt-1 mb-3 text-body-secondary">Еще нет аккаунта? <a href="/sign-up">Пройти регистрацию</a></p>
+        </form>
+    </div>
+</div>

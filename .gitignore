@@ -1,0 +1,19 @@
+# Зависимости
+node_modules/
+
+# Сборка
+dist/
+build/
+*.tsbuildinfo
+
+# IDE
+.idea/
+.gigaide/
+
+# Логи и окружение
+*.log
+.env
+.env.local
+
+# macOS
+.DS_Store

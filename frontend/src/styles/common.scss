@@ -1,0 +1,153 @@
+.content {
+  height: auto;
+}
+
+.content-main {
+  display: flex;
+}
+
+.wrap-buttons {
+  display: flex;
+  flex-wrap: wrap;
+
+  div {
+    button {
+      margin-right: 10px;
+    }
+  }
+}
+
+canvas {
+  width: 444px;
+}
+
+.wrap-container {
+  height: 100%;
+}
+
+.wrap-container-title, .graphic-title, .table th {
+  color: #052c65;
+}
+
+.income-element {
+  border: 1px solid #ced4da;
+  border-radius: 12px;
+  width: 352px;
+  min-height: 121px;
+  padding: 5px;
+}
+
+.income-element-title {
+  font-weight: 500;
+  font-size: 28px;
+  color: #290661;
+  line-height: 1;
+}
+
+.popup-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.popup-element {
+  border: 1px solid #ced4da;
+  border-radius: 12px;
+  width: 530px;
+  height: 184px;
+  color: #290661;
+  font-weight: 500;
+}
+
+.wrap-graphics {
+  align-items: flex-end;
+  max-width: 1200px;
+}
+
+.graphics-line-block {
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+}
+
+.graphics-line {
+  width: 1px;
+  height: 470px;
+  background: #d9d9d9;
+  margin-left: 84px;
+  margin-right: 84px;
+}
+
+table.table {
+  td, th {
+    text-align: center;
+  }
+
+  td a {
+    text-decoration: none;
+  }
+}
+
+.auth-wrap {
+  height: 100vh;
+}
+
+select.form-control {
+  width: 397px;
+}
+
+select.form-control option{
+  width: 397px;
+  min-width: 397px;
+  max-width: 397px;
+}
+
+select:focus {
+  color: black;
+}
+
+
+
+.dataInput {
+  max-width: 90px;
+  height: 37px;
+  border: none;
+  text-align: center;
+
+  &::placeholder {
+    font-size: 21px;
+    text-decoration: underline;
+  }
+}
+.btn-period:disabled {
+  background: #6c757d;
+  color: white;
+}
+
+input.inactive {
+  pointer-events: none;
+}
+
+@media screen and (max-width: 1500px) {
+  canvas {
+    width: 28vw;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .wrap-graphics {
+    flex-direction: column;
+    max-height: 800px;
+
+    .graphics-line-block {
+      display: none;
+
+    }
+  }
+  canvas {
+    width: 45vw;
+  }
+}
