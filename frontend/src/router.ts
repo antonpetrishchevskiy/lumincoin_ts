@@ -220,8 +220,10 @@ export class Router {
             // Если accessToken отсутствует, но refreshToken есть — пробуем обновить
             if (!hasAccessToken && hasRefreshToken) {
                 try {
-                    const refreshed = await AuthTokens.refreshToken();
-                    if (!refreshed) {
+                    await AuthTokens.refreshToken();
+                    // refreshToken() ничего не возвращает, поэтому проверяем localStorage:
+                    // если accessToken появился — refresh удался, иначе — пользователя на /login
+                    if (!localStorage.getItem("accessToken")) {
                         newRoute = this.routes.find((route) => route.route === '/login');
                     }
                 } catch {
