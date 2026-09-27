@@ -9,63 +9,126 @@ import {
 import {ResponseUtilsObjectHeadersType, ResponseUtilsObjectType} from "../../types/response-utils.type";
 import {ErrorResultResponse} from "../../types/result-response.type";
 
+type RequestBody = ResponseBody | LoginResponseBody | RefreshResponseBody | EditCreateResponseBody | null;
+
 export class Response {
-    public static async getElementsFromBackend(method: string, url: string, accessToken: string | null, body: ResponseBody | LoginResponseBody | RefreshResponseBody | EditCreateResponseBody | null = null, params: string | null = null): Promise<any> {
-        let headers: ResponseUtilsObjectHeadersType | null = null;
+    public static async getElementsFromBackend<T = any>(
+        method: string,
+        url: string,
+        accessToken: string | null,
+        body: RequestBody = null,
+        params: string | null = null
+    ): Promise<T | ErrorResultResponse> {
+        const requestUrl = config.api + url;
+        const isPublicEndpoint = /^\/(login|signup|refresh|logout)(?:\/|$)/.test(url);
+        let token = accessToken;
+
+        if (!isPublicEndpoint) {
+            token = await AuthTokens.ensureAccessToken();
+
+            if (!token) {
+                return {
+                    error: true,
+                    message: 'Сессия истекла',
+                };
+            }
+        }
+
+        const firstResult = await this.request<T>(method, requestUrl, token, body, params);
+
+        if (!this.isAuthFailure(firstResult)) {
+            return firstResult;
+        }
+
+        if (isPublicEndpoint) {
+            return firstResult;
+        }
+
+        const refreshedToken = await AuthTokens.refreshToken();
+
+        if (!refreshedToken) {
+            return firstResult;
+        }
+
+        return this.request<T>(method, requestUrl, refreshedToken, body, params);
+    }
+
+    private static async request<T>(
+        method: string,
+        requestUrl: string,
+        accessToken: string | null,
+        body: RequestBody,
+        params: string | null
+    ): Promise<T | ErrorResultResponse> {
+        const headers: ResponseUtilsObjectHeadersType = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+        };
 
         if (accessToken) {
-            headers = {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                'x-auth-token': accessToken,
-            }
-        } else {
-            headers = {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-            }
+            headers['x-auth-token'] = accessToken;
         }
 
-        let object: ResponseUtilsObjectType = {
-            method: method,
-            headers: headers,
-        }
+        const requestOptions: ResponseUtilsObjectType = {
+            method,
+            headers,
+        };
 
         if (body) {
-            object.body = JSON.stringify(body);
+            requestOptions.body = JSON.stringify(body);
         }
 
         if (params) {
-            object.params = JSON.stringify(params);
+            requestOptions.params = JSON.stringify(params);
         }
 
-        const response: globalThis.Response = await fetch(config.api + url, object);
+        try {
+            const response = await fetch(requestUrl, requestOptions);
 
-        if (!(response.status >= 200 && response.status < 300)) {
-            console.log('Error fetching incomes from backend');
-            localStorage.clear();
-            return;
-        }
-
-        const result: EditCreateResponseBody[] | ErrorResultResponse = await response.json();
-
-        if ('error' in result) {
-            if(result.error) {
-                if (result.message === "jwt expired") {
-                    await AuthTokens.refreshToken();
-                    await this.getElementsFromBackend(method, url, accessToken, body);
-                    return;
-                } else if (result.message === "Invalid email or password") {
-                    return result;
-                } else if (result.error) {
-                    localStorage.clear();
-                    return result;
-                } else {
-                    console.log(`Error: ${result.message}`);
-                    localStorage.clear();
-                }
+            let result: T | ErrorResultResponse;
+            try {
+                result = await response.json() as T | ErrorResultResponse;
+            } catch {
+                return {
+                    error: true,
+                    message: 'Сервер вернул некорректный ответ',
+                };
             }
+
+            if (!response.ok) {
+                if (this.isErrorResult(result)) {
+                    return {
+                        ...result,
+                        status: response.status,
+                    };
+                }
+
+                return {
+                    error: true,
+                    message: 'Ошибка сервера',
+                    status: response.status,
+                };
+            }
+
+            return result;
+        } catch (error) {
+            console.error('Request failed:', error);
+            return {
+                error: true,
+                message: 'Ошибка соединения с сервером',
+            };
         }
-        return result;
+    }
+
+    private static isAuthFailure(result: unknown): boolean {
+        if (!this.isErrorResult(result)) {
+            return false;
+        }
+
+        return result.status === 401 || /jwt expired|token expired|unauthorized/i.test(result.message);
+    }
+
+    private static isErrorResult(result: unknown): result is ErrorResultResponse & { status?: number } {
+        return Boolean(result && typeof result === 'object' && 'error' in result && (result as { error: unknown }).error === true);
     }
 }

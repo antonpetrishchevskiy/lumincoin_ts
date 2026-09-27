@@ -98,7 +98,11 @@ export class CreateGeneralOperation {
             }
         }
 
-        this.element = await Response.getElementsFromBackend('GET', urlRequest, this.accessToken);
+        const result = await Response.getElementsFromBackend<GetCartTitle>('GET', urlRequest, this.accessToken);
+        if (Array.isArray(result)) {
+            this.element = result;
+        }
+
         this.createSelectOptionsCategory();
     }
 

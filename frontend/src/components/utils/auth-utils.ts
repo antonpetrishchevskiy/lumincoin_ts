@@ -1,70 +1,212 @@
-import {Response} from "./response-utils";
+import {config} from "../../config/config";
 import {LoginResponseBody, RefreshResponseBody} from "../../types/response-body.type";
-import {OpenNewRouteAutomaticType} from "../../types/openNewRouteAutomatic.type";
 import {ErrorResultResponse, LoginResultResponse, RefreshResultResponse} from "../../types/result-response.type";
 
+type RefreshState = {
+    promise: Promise<string | null> | null;
+};
+
 export class AuthTokens {
-    private openNewRouteAutomatic: (url: string) => Promise<void>;
+    static readonly accessTokenKey = 'accessToken';
+    static readonly refreshTokenKey = 'refreshToken';
+    static readonly userInfoTokenKey = 'userInfo';
+    static readonly rememberMeKey = 'rememberMe';
 
-    constructor(openNewRouteAutomatic: OpenNewRouteAutomaticType) {
-        this.openNewRouteAutomatic = openNewRouteAutomatic;
-    }
+    private static refreshState: RefreshState = {
+        promise: null,
+    };
 
-    static accessTokenKey = 'accessToken';
-    static refreshTokenKey = 'refreshToken';
-    static userInfoTokenKey = 'userInfo';
-
-    public static setToken(tokenName: string, tokenValue: string) {
+    static setToken(tokenName: string, tokenValue: string): void {
         localStorage.setItem(tokenName, tokenValue);
     }
 
-    public static getToken(tokenName: string) {
+    static getToken(tokenName: string): string | null {
         return localStorage.getItem(tokenName);
     }
 
-    static async getTokensAfterRegistration(email: string, password: string, rememberMe: boolean = false) {
+    static removeToken(tokenName: string): void {
+        localStorage.removeItem(tokenName);
+    }
 
-        const result: LoginResultResponse | ErrorResultResponse = await Response.getElementsFromBackend('POST', '/login', null, {
-            email: email,
-            password: password,
-            rememberMe: rememberMe,
+    static setSession(result: LoginResultResponse, rememberMe: boolean): void {
+        this.setToken(this.accessTokenKey, result.tokens.accessToken);
+        this.setToken(this.refreshTokenKey, result.tokens.refreshToken);
+        this.setToken(this.userInfoTokenKey, JSON.stringify(result.user));
+        this.setToken(this.rememberMeKey, String(rememberMe));
+    }
+
+    static clearSession(): void {
+        this.removeToken(this.accessTokenKey);
+        this.removeToken(this.refreshTokenKey);
+        this.removeToken(this.userInfoTokenKey);
+        this.removeToken(this.rememberMeKey);
+        this.removeToken('createBtn');
+        this.removeToken('rowData');
+        this.removeToken('idRowGenerals');
+        this.removeToken('incomeElementTitle');
+        this.removeToken('incomeElementId');
+    }
+
+    static hasRefreshToken(): boolean {
+        return Boolean(this.getToken(this.refreshTokenKey));
+    }
+
+    static async login(email: string, password: string, rememberMe: boolean): Promise<LoginResultResponse | ErrorResultResponse> {
+        const result = await this.request<LoginResultResponse | ErrorResultResponse>('/login', {
+            email,
+            password,
+            rememberMe,
         } as LoginResponseBody);
 
-        console.log(result);
+        if (this.isLoginResult(result)) {
+            this.setSession(result, rememberMe);
+        }
 
-        if (result) {
-            if (('error' in result) || !result.tokens || !result.user) {
-                return result;
+        return result;
+    }
+
+    static async ensureAccessToken(forceRefresh = false): Promise<string | null> {
+        const accessToken = this.getToken(this.accessTokenKey);
+        const refreshToken = this.getToken(this.refreshTokenKey);
+
+        if (!refreshToken) {
+            return accessToken;
+        }
+
+        if (!forceRefresh && accessToken && !this.isTokenExpiring(accessToken)) {
+            return accessToken;
+        }
+
+        const refreshedToken = await this.refreshToken();
+        return refreshedToken ?? accessToken;
+    }
+
+    static async refreshToken(): Promise<string | null> {
+        if (this.refreshState.promise) {
+            return this.refreshState.promise;
+        }
+
+        const refreshToken = this.getToken(this.refreshTokenKey);
+        if (!refreshToken) {
+            return null;
+        }
+
+        this.refreshState.promise = this.performRefresh(refreshToken)
+            .finally(() => {
+                this.refreshState.promise = null;
+            });
+
+        return this.refreshState.promise;
+    }
+
+    private static async performRefresh(refreshToken: string): Promise<string | null> {
+        const rememberMe = this.getToken(this.rememberMeKey) === 'true';
+
+        let response: globalThis.Response;
+
+        try {
+            response = await fetch(config.api + '/refresh', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    refreshToken,
+                    rememberMe,
+                } as RefreshResponseBody & { rememberMe: boolean }),
+            });
+        } catch (error) {
+            console.error('Token refresh request failed:', error);
+            return null;
+        }
+
+        let result: RefreshResultResponse | ErrorResultResponse;
+
+        try {
+            result = await response.json();
+        } catch (error) {
+            console.error('Invalid refresh response:', error);
+            return null;
+        }
+
+        if (!response.ok || !this.isRefreshResult(result)) {
+            if (response.status === 401 || response.status === 403 || this.isAuthError(result)) {
+                this.clearSession();
+            }
+            return null;
+        }
+
+        const accessToken = result.tokens.accessToken;
+        const nextRefreshToken = result.tokens.refreshToken;
+
+        if (!accessToken || !nextRefreshToken) {
+            this.clearSession();
+            return null;
+        }
+
+        this.setToken(this.accessTokenKey, accessToken);
+        this.setToken(this.refreshTokenKey, nextRefreshToken);
+
+        return accessToken;
+    }
+
+    private static isTokenExpiring(token: string, thresholdSeconds = 60): boolean {
+        const payload = this.decodeJwtPayload(token);
+        if (!payload || typeof payload.exp !== 'number') {
+            return false;
+        }
+
+        return payload.exp <= Math.floor(Date.now() / 1000) + thresholdSeconds;
+    }
+
+    private static decodeJwtPayload(token: string): { exp?: number } | null {
+        try {
+            const parts = token.split('.');
+            if (parts.length !== 3) {
+                return null;
             }
 
-            AuthTokens.setToken(AuthTokens.accessTokenKey, result.tokens.accessToken);
-            AuthTokens.setToken(AuthTokens.refreshTokenKey, result.tokens.refreshToken);
-            AuthTokens.setToken(AuthTokens.userInfoTokenKey, JSON.stringify(result.user));
+            const normalized = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+            const payload = decodeURIComponent(
+                atob(normalized.padEnd(normalized.length + (4 - normalized.length % 4) % 4, '='))
+                    .split('')
+                    .map((char) => '%' + ('00' + char.charCodeAt(0).toString(16)).slice(-2))
+                    .join('')
+            );
 
-            return result;
+            return JSON.parse(payload);
+        } catch {
+            return null;
         }
     }
 
-    static async refreshToken() {
-        const refreshToken = AuthTokens.getToken(AuthTokens.refreshTokenKey);
+    private static async request<T>(endpoint: string, body: LoginResponseBody): Promise<T> {
+        try {
+            const response = await fetch(config.api + endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify(body),
+            });
 
-        if (refreshToken) {
-            const result: RefreshResultResponse | ErrorResultResponse = await Response.getElementsFromBackend('POST', '/refresh', null, {refreshToken: refreshToken} as RefreshResponseBody);
-
-
-            if (!result || 'error' in result || !result.tokens) {
-                console.log('Refresh token устарел')
-                localStorage.clear();
-                return;
-            }
-
-
-            const access: string | null = result.tokens.accessToken;
-            const refresh: string | null = result.tokens.refreshToken
-            if (access && refresh) {
-                AuthTokens.setToken(AuthTokens.accessTokenKey, access);
-                AuthTokens.setToken(AuthTokens.refreshTokenKey, refresh);
-            }
+            return await response.json() as T;
+        } catch (error) {
+            throw new Error('Ошибка соединения с сервером');
         }
+    }
+
+    private static isLoginResult(result: LoginResultResponse | ErrorResultResponse): result is LoginResultResponse {
+        return 'tokens' in result && 'user' in result && Boolean(result.tokens?.accessToken && result.tokens?.refreshToken);
+    }
+
+    private static isRefreshResult(result: RefreshResultResponse | ErrorResultResponse): result is RefreshResultResponse {
+        return 'tokens' in result && Boolean(result.tokens?.accessToken && result.tokens?.refreshToken);
+    }
+
+    private static isAuthError(result: RefreshResultResponse | ErrorResultResponse): boolean {
+        return 'message' in result && /token|jwt|auth|unauthorized|invalid/i.test(result.message);
     }
 }

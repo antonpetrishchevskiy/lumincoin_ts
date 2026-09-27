@@ -1,20 +1,19 @@
 export class FormUtils {
-    static resetValidationErrors(inputsElement: any, errorElement: HTMLElement | null): void {
+    static resetValidationErrors(
+        inputsElement: NodeListOf<HTMLInputElement>,
+        errorElement: HTMLElement | null
+    ): void {
         if (errorElement) {
-            errorElement.innerText = '';
+            errorElement.textContent = '';
         }
 
-        inputsElement.forEach((input: HTMLElement) => {
+        inputsElement.forEach(input => {
             const parentInputElement = input.closest('.input-block');
             const iconInputElement = input.closest('.form-floating')?.previousElementSibling;
 
             input.classList.remove('invalid');
-            if (iconInputElement) {
-                iconInputElement.classList.remove('invalid');
-            }
-            if (parentInputElement && parentInputElement.nextElementSibling) {
-                parentInputElement.nextElementSibling.classList.remove('invalid');
-            }
+            iconInputElement?.classList.remove('invalid');
+            parentInputElement?.nextElementSibling?.classList.remove('invalid');
         });
     }
 }

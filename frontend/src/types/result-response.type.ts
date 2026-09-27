@@ -1,6 +1,7 @@
 export type ErrorResultResponse = {
     error: boolean;
     message: string;
+    status?: number;
     validation?: Array<{
         "key": string,
         "message": string;

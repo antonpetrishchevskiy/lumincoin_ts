@@ -1,58 +1,52 @@
 import {config} from "../../config/config";
 import {AuthTokens} from "../utils/auth-utils";
 import {OpenNewRouteAutomaticType} from "../../types/openNewRouteAutomatic.type";
-import {ErrorResultResponse} from "../../types/result-response.type";
 
 export class Logout {
     readonly openNewRouteAutomatic: OpenNewRouteAutomaticType;
     readonly logoutUserName: HTMLElement | null;
     readonly logoutExitBtn: HTMLElement | null;
-    isBlock: boolean;
+    private isBlock = false;
 
     constructor(openNewRouteAutomatic: OpenNewRouteAutomaticType) {
         this.openNewRouteAutomatic = openNewRouteAutomatic;
         this.logoutUserName = document.getElementById("layoutUserNameBlock");
         this.logoutExitBtn = document.getElementById("exit-layout");
-        if (this.logoutUserName) {
-            this.logoutUserName.addEventListener("click", this.showBtnExit.bind(this));
-        }
-        if (this.logoutExitBtn) {
-            this.logoutExitBtn.addEventListener("click", this.logout.bind(this));
-        }
-        this.isBlock = false;
+
+        this.logoutUserName?.addEventListener("click", () => this.showBtnExit());
+        this.logoutExitBtn?.addEventListener("click", (event) => {
+            this.logout(event).catch((error) => console.error('Logout error:', error));
+        });
     }
 
     private showBtnExit(): void {
-        if (this.logoutExitBtn) {
-            if (this.isBlock) {
-                this.logoutExitBtn.style.display = "block";
-                this.isBlock = false;
-            } else {
-                this.logoutExitBtn.style.display = "none";
-                this.isBlock = true;
-            }
+        if (!this.logoutExitBtn) {
+            return;
         }
+
+        this.logoutExitBtn.style.display = this.isBlock ? "block" : "none";
+        this.isBlock = !this.isBlock;
     }
 
-    private async logout(e: Event): Promise<void> {
+    private async logout(_event: Event): Promise<void> {
         const refreshToken = AuthTokens.getToken(AuthTokens.refreshTokenKey);
 
-        const response: Response = await fetch(config.api + '/logout', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-            },
-            body: JSON.stringify({
-                refreshToken: refreshToken,
-            })
-        });
-
-        const result: ErrorResultResponse = await response.json();
-
-        if (result && !result.error) {
-            localStorage.clear();
-            this.openNewRouteAutomatic('/login').then();
+        try {
+            if (refreshToken) {
+                await fetch(config.api + '/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({refreshToken}),
+                });
+            }
+        } catch (error) {
+            console.error('Logout request failed:', error);
+        } finally {
+            AuthTokens.clearSession();
+            await this.openNewRouteAutomatic('/login');
         }
     }
 }
