@@ -10,23 +10,26 @@ export class Login {
     readonly inputsElement: NodeListOf<HTMLInputElement>;
     readonly rememberMeInput: HTMLInputElement | null;
     readonly errorLogin: HTMLElement | null;
-    readonly loginBtn: HTMLElement | null;
+    readonly loginBtn: HTMLButtonElement | null;
+    readonly formElement: HTMLFormElement | null;
 
     constructor(openNewRouteAutomatic: OpenNewRouteAutomaticType) {
         this.openNewRouteAutomatic = openNewRouteAutomatic;
         this.inputsElement = document.querySelectorAll('.form-floating input');
         this.rememberMeInput = document.getElementById('remember-meInput') as HTMLInputElement | null;
         this.errorLogin = document.getElementById('error-login');
-        this.loginBtn = document.getElementById('loginBtn');
+        this.loginBtn = document.getElementById('loginBtn') as HTMLButtonElement | null;
+        this.formElement = document.querySelector('form');
 
-        this.loginBtn?.addEventListener('click', () => {
-            this.login().catch((error) => {
-                console.error('Login error:', error);
+        this.formElement?.addEventListener('submit', (event) => {
+            event.preventDefault();
+            this.login().catch(() => {
                 if (this.errorLogin) {
                     this.errorLogin.innerText = 'Ошибка при подключении к серверу. Проверьте соединение.';
                 }
             });
         });
+
     }
 
     private async login(): Promise<void> {
@@ -41,7 +44,7 @@ export class Login {
             return;
         }
 
-        this.loginBtn.setAttribute('disabled', 'disabled');
+        this.loginBtn.disabled = true;
 
         try {
             const rememberMe = Boolean(this.rememberMeInput?.checked);
@@ -58,7 +61,7 @@ export class Login {
 
             await this.openNewRouteAutomatic('/');
         } finally {
-            this.loginBtn.removeAttribute('disabled');
+            this.loginBtn.disabled = false;
         }
     }
 }

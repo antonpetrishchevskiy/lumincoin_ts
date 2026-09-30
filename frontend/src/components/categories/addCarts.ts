@@ -9,7 +9,7 @@ export class AddCart {
     readonly urlRequest: string;
     readonly createBtn: HTMLElement | null;
     readonly cancelBtn: HTMLElement | null;
-    private inputCartValue: HTMLElement | null;
+    private inputCartValue: HTMLInputElement | null;
 
     constructor(openNewRouteAutomatic: OpenNewRouteAutomaticType, urlRequest: string, url: string) {
         this.openNewRouteAutomatic = openNewRouteAutomatic;
@@ -17,7 +17,7 @@ export class AddCart {
         this.urlRequest = urlRequest;
         this.createBtn = document.getElementById("createCartBtn");
         this.cancelBtn = document.getElementById("cancelCreateCartBtn");
-        this.inputCartValue = document.getElementById("nameCreateIncomeElement");
+        this.inputCartValue = document.getElementById("nameCreateIncomeElement") as HTMLInputElement | null;
         if(this.createBtn) {
             this.createBtn.onclick = this.addCart.bind(this);
         }
@@ -36,7 +36,17 @@ export class AddCart {
             return;
         }
 
-        const result: AddCartResultResponse | ErrorResultResponse = await Response.getElementsFromBackend('POST', this.urlRequest, accessToken, {title: (this.inputCartValue as HTMLInputElement).value});
+        if (!this.inputCartValue) {
+            return;
+        }
+
+        const title = this.inputCartValue.value.trim();
+        if (!title) {
+            this.inputCartValue.focus();
+            return;
+        }
+
+        const result: AddCartResultResponse | ErrorResultResponse = await Response.getElementsFromBackend('POST', this.urlRequest, accessToken, {title});
 
         if (('error' in result) || !('title' in result)) {
             console.log(`Error: ${result.message}`)

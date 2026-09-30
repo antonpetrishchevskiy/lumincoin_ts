@@ -1,23 +1,22 @@
 import {AuthTokens} from "../utils/auth-utils";
 import {Response} from "../utils/response-utils";
 import {OpenNewRouteAutomaticType} from "../../types/openNewRouteAutomatic.type";
-import {ErrorResultResponse} from "../../types/result-response.type";
 
 export class DeleteGeneralElement {
     private openNewRouteAutomatic: OpenNewRouteAutomaticType
     readonly urlRequest: string;
     readonly url: string;
     private generalElementId: string | null;
-    readonly deleteBtn: HTMLElement | null;
-    readonly cancelBtn: HTMLElement | null;
+    readonly deleteBtn: HTMLButtonElement | null;
+    readonly cancelBtn: HTMLButtonElement | null;
 
     constructor(openNewRouteAutomatic: OpenNewRouteAutomaticType, urlRequest: string, url: string) {
         this.openNewRouteAutomatic = openNewRouteAutomatic;
         this.urlRequest = urlRequest;
         this.url = url;
-        this.generalElementId = null;
-        this.deleteBtn = document.getElementById('deleteBtn');
-        this.cancelBtn = document.getElementById('cancelBtn');
+        this.generalElementId = new URLSearchParams(window.location.search).get('id');
+        this.deleteBtn = document.getElementById('deleteBtn') as HTMLButtonElement | null;
+        this.cancelBtn = document.getElementById('cancelBtn') as HTMLButtonElement | null;
         if(this.deleteBtn) {
             this.deleteBtn.onclick = this.deleteElement.bind(this);
         }
@@ -27,22 +26,24 @@ export class DeleteGeneralElement {
     }
 
     private async deleteElement(): Promise<void> {
-        this.generalElementId = localStorage.getItem('idRowGenerals');
         const accessToken = AuthTokens.getToken(AuthTokens.accessTokenKey);
         if (!accessToken) {
             console.log('No access token');
             return;
         }
 
-        const result: ErrorResultResponse = await Response.getElementsFromBackend('DELETE', this.urlRequest + this.generalElementId, accessToken);
-        if (result.error) {
-            console.log(`Error: ${result.message}`)
+        if (!this.generalElementId) {
+            await this.openNewRouteAutomatic(this.url);
             return;
         }
-        this.openNewRouteAutomatic(this.url).then();
+
+        const result = await Response.getElementsFromBackend('DELETE', this.urlRequest + this.generalElementId, accessToken);
+        if (!('error' in result) || !result.error) {
+            await this.openNewRouteAutomatic(this.url);
+        }
     }
 
-    cancelDelete() {
-        this.openNewRouteAutomatic(this.url).then();
+    private async cancelDelete(): Promise<void> {
+        await this.openNewRouteAutomatic(this.url);
     }
 }

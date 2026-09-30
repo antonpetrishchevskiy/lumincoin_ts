@@ -8,19 +8,20 @@ export class EditCarts {
     readonly url: string;
     readonly incomeElementTitle: string | null;
     readonly incomeElementId: string | null;
-    readonly editElementTitle: HTMLElement | null;
-    readonly saveBtn: HTMLElement | null;
-    readonly cancelBtn: HTMLElement | null;
+    readonly editElementTitle: HTMLInputElement | null;
+    readonly saveBtn: HTMLButtonElement | null;
+    readonly cancelBtn: HTMLButtonElement | null;
 
     constructor(openNewRouteAutomatic: OpenNewRouteAutomaticType, urlRequest: string, url: string) {
         this.openNewRouteAutomatic = openNewRouteAutomatic;
         this.urlRequest = urlRequest;
         this.url = url;
-        this.incomeElementTitle = localStorage.getItem('incomeElementTitle');
-        this.incomeElementId = localStorage.getItem('incomeElementId');
-        this.editElementTitle = document.getElementById('nameEditElement');
-        this.saveBtn = document.getElementById('saveBtn');
-        this.cancelBtn = document.getElementById('cancelEdit');
+        const params = new URLSearchParams(window.location.search);
+        this.incomeElementId = params.get('id');
+        this.incomeElementTitle = params.get('title');
+        this.editElementTitle = document.getElementById('nameEditElement') as HTMLInputElement | null;
+        this.saveBtn = document.getElementById('saveBtn') as HTMLButtonElement | null;
+        this.cancelBtn = document.getElementById('cancelEdit') as HTMLButtonElement | null;
         this.setEditElementValue();
         if (this.saveBtn) {
             this.saveBtn.onclick = this.changeElementValue.bind(this);
@@ -37,23 +38,23 @@ export class EditCarts {
     }
 
     private async changeElementValue(): Promise<void> {
-        const accessToken = AuthTokens.getToken(AuthTokens.accessTokenKey);
+        const accessToken = await AuthTokens.ensureAccessToken();
         if (this.editElementTitle) {
-            const editElementTitle = (this.editElementTitle as HTMLInputElement).value;
-            if (!accessToken) {
+            const editElementTitle = this.editElementTitle.value.trim();
+            if (!this.incomeElementId || !accessToken || !editElementTitle) {
                 console.log('No access token');
                 return;
             }
 
             const result = await Response.getElementsFromBackend('PUT', this.urlRequest + this.incomeElementId, accessToken, {title: editElementTitle});
 
-            if (result) {
-                this.openNewRouteAutomatic(this.url).then();
+            if (!('error' in result) || !result.error) {
+                await this.openNewRouteAutomatic(this.url);
             }
         }
     }
 
-    cancelEditElement() {
-        this.openNewRouteAutomatic(this.url).then();
+    private async cancelEditElement(): Promise<void> {
+        await this.openNewRouteAutomatic(this.url);
     }
 }

@@ -1,10 +1,11 @@
-<div class=" sidebar close d-flex flex-column flex-shrink-0 p-3 pe-0 ps-0 bg-white layout" id="slider">
+<aside class=" sidebar close d-flex flex-column flex-shrink-0 p-3 pe-0 ps-0 bg-white layout" id="slider">
     <a href="/"
        class="d-flex justify-content-center align-items-center mb-3 mt-3 link-body-emphasis text-decoration-none">
         <img class="sidebar-img" src="/static/images/logo.png" alt="logo">
     </a>
     <hr>
-    <ul class="nav nav-pills flex-column mb-auto mt-4" id="layoutLinks">
+    <nav aria-label="Основная навигация">
+        <ul class="nav nav-pills flex-column mb-auto" id="layoutLinks">
         <li class="ps-3 pe-3">
             <a href="/" class="nav-link mt-2 pt-2 pb-2 d-flex align-items-center">
                 <svg class="me-2" width="15" height="14" viewBox="0 0 15 14" fill="#052C65"
@@ -39,32 +40,33 @@
                 Доходы & Расходы
             </a>
         </li>
-        <div class="container-category ps-3 pe-3">
+        <li class="container-category ps-3 pe-3">
             <details class="bg-light rounded bg bg-white">
                 <summary class="font-weight-bold summary-name open checked rounded pt-2 ps-3 pe-3 pb-2">Категории</summary>
-                <li>
-                    <a href="/incomes" class="nav-link rounded-0 pt-2 pb-2 ps-3">Доходы</a>
-                </li>
-                <li>
-                    <a href="/expenses" class="nav-link rounded-0 pt-2 pb-2 ps-3">Расходы</a>
-                </li>
+                <ul class="list-unstyled mb-0">
+                    <li>
+                        <a href="/incomes" class="nav-link rounded-0 pt-2 pb-2 ps-3">Доходы</a>
+                    </li>
+                    <li>
+                        <a href="/expenses" class="nav-link rounded-0 pt-2 pb-2 ps-3">Расходы</a>
+                    </li>
+                </ul>
             </details>
-        </div>
-    </ul>
+        </li>
+        </ul>
+    </nav>
     <div class="balance ps-3">
         Баланс: <span id="userBalance">500$</span>
     </div>
     <hr>
     <div class="ps-3 pe-3 d-flex flex-column align-items-center person-sandbar">
-        <div class="ms-3 me-3 text-small exit-layout btn cursor-pointer" id="exit-layout">
-            <div id="logoutBtn">Выйти</div>
-        </div>
-        <div class="w-100 d-flex btn cursor-pointer align-items-center" id="layoutUserNameBlock">
+        <button type="button" class="ms-3 me-3 text-small exit-layout btn cursor-pointer" id="exit-layout" hidden>Выйти</button>
+        <button type="button" class="w-100 d-flex btn cursor-pointer align-items-center" id="layoutUserNameBlock">
             <i class="far fa-user rounded-circle text-secondary me-3 p-2"></i>
             <span id="layoutUserName"></span>
-        </div>
+        </button>
     </div>
-    <div class="burger" id="burger">
-        <div class="line-burger"></div>
-    </div>
-</div>
+    <button type="button" class="burger" id="burger" aria-label="Открыть меню">
+        <span class="line-burger" aria-hidden="true"></span>
+    </button>
+</aside>

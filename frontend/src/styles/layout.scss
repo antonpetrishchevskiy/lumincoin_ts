@@ -80,11 +80,15 @@ details[open] summary::after {
     top: 20px;
     visibility: hidden;
     cursor: pointer;
+    border: 0;
+    padding: 0;
+    background: transparent;
     width: 40px;
     height: 40px;
 }
 
 .line-burger {
+    display: block;
     width: 40px;
     background-color: #052c65;
     height: 2px;
@@ -159,6 +163,7 @@ details.checked {
 }
 
 .balance {
+    margin-top: auto;
     font-size: 14px;
     font-weight: 500;
     color: #052c65;
@@ -183,7 +188,7 @@ details.checked {
 }
 
 .exit-layout {
-    display: none;
+    display: block;
     background: #0d6efd;
     color: #ffffff;
     padding: 4px;

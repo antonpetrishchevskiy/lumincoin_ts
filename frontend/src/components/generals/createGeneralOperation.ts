@@ -12,93 +12,90 @@ export class CreateGeneralOperation {
     readonly openNewRouteAutomatic: OpenNewRouteAutomaticType;
     readonly urlRequest: string;
     readonly url: string;
-    readonly amountElement: HTMLElement | null;
-    readonly dataElement: HTMLElement | null;
-    readonly commentElement: HTMLElement | null;
-    readonly btnCreate: HTMLElement | null;
-    readonly btnCancel: HTMLElement | null;
+    readonly amountElement: HTMLInputElement | null;
+    readonly dataElement: HTMLInputElement | null;
+    readonly commentElement: HTMLInputElement | null;
+    readonly btnCreate: HTMLButtonElement | null;
+    readonly btnCancel: HTMLButtonElement | null;
     private accessToken: string | null;
     readonly type: string | null;
-    readonly selects: NodeListOf<HTMLElement> | null;
-    private element: GetCartTitle | [];
+    readonly selects: NodeListOf<HTMLSelectElement>;
+    private element: GetCartTitle = [];
 
     constructor(openNewRouteAutomatic: OpenNewRouteAutomaticType, urlRequest: string, url: string) {
         this.openNewRouteAutomatic = openNewRouteAutomatic;
         this.urlRequest = urlRequest;
         this.url = url;
-        this.amountElement = document.getElementById('sumCreateGeneralElement');
-        this.dataElement = document.getElementById('dataCreateGeneralElement');
-        this.commentElement = document.getElementById('commentCreateGeneralElement');
-        this.btnCreate = document.getElementById("btn-create");
-        this.btnCancel = document.getElementById("btn-cancel");
+        this.amountElement = document.getElementById('sumCreateGeneralElement') as HTMLInputElement | null;
+        this.dataElement = document.getElementById('dataCreateGeneralElement') as HTMLInputElement | null;
+        this.commentElement = document.getElementById('commentCreateGeneralElement') as HTMLInputElement | null;
+        this.btnCreate = document.getElementById('btn-create') as HTMLButtonElement | null;
+        this.btnCancel = document.getElementById('btn-cancel') as HTMLButtonElement | null;
         this.accessToken = AuthTokens.getToken(AuthTokens.accessTokenKey);
-        this.type = AuthTokens.getToken('createBtn');
+        this.type = new URLSearchParams(window.location.search).get('type');
         this.selects = document.querySelectorAll('select');
-        this.element = [];
+
         this.selectColorText();
         this.automaticChoiceType();
-        if (this.btnCancel) {
-            this.btnCancel.onclick = this.clickBtnCancel.bind(this);
-        }
-        if (this.btnCreate) {
-            this.btnCreate.onclick = this.clickBtnCreate.bind(this);
-        }
 
-        flatpickr("#dataCreateGeneralElement", {
-            dateFormat: "Y-m-d",
+        this.btnCancel?.addEventListener('click', () => {
+            this.clickBtnCancel().catch(console.error);
+        });
+        this.btnCreate?.addEventListener('click', () => {
+            this.clickBtnCreate().catch(console.error);
+        });
+
+        flatpickr('#dataCreateGeneralElement', {
+            dateFormat: 'Y-m-d',
             locale: Russian,
         });
     }
 
     private selectColorText(): void {
-        if (this.selects) {
-            this.selects[1].style.color = '#6c757d';
-            this.selects[0].addEventListener('focus', (e) => {
-                if (this.selects) {
-                    this.selects[0].style.color = 'black';
-                }
-            })
-            this.selects[1].addEventListener('focus', (e) => {
-                if (this.selects) {
-                    this.selects[1].style.color = 'black';
-                }
-            })
-            this.selects[1].addEventListener('blur', (e) => {
-                if (this.selects) {
-                    if ((this.selects[1] as HTMLSelectElement).value === '') {
-                        this.selects[1].style.color = '#6c757d';
-                    }
-                }
-            })
+        if (this.selects.length < 2) {
+            return;
         }
+
+        this.selects[1].style.color = '#6c757d';
+        this.selects[0].addEventListener('focus', () => {
+            this.selects[0].style.color = 'black';
+        });
+        this.selects[1].addEventListener('focus', () => {
+            this.selects[1].style.color = 'black';
+        });
+        this.selects[1].addEventListener('blur', () => {
+            if (!this.selects[1].value) {
+                this.selects[1].style.color = '#6c757d';
+            }
+        });
     }
 
     private automaticChoiceType(): void {
-        if (this.selects) {
-            this.selects[0].querySelectorAll('option').forEach(option => {
-                if (option.value === this.type) {
-                    option.selected = true;
-                }
-                if (this.selects) {
-                    this.selects[0].setAttribute('disabled', 'disabled');
-                }
-            });
+        if (this.selects.length < 2 || !this.type) {
+            return;
         }
-        this.addSelectCategoryValue().then();
+
+        this.selects[0].value = this.type;
+        this.selects[0].disabled = true;
+        this.addSelectCategoryValue().catch(console.error);
     }
 
     private async addSelectCategoryValue(): Promise<void> {
-        let urlRequest: string = '';
-        this.accessToken = AuthTokens.getToken(AuthTokens.accessTokenKey);
-        if (this.selects) {
-            if ((this.selects[0] as HTMLOptionElement).value === 'income') {
-                urlRequest = url.changeIncomes;
-            } else {
-                urlRequest = url.changeExpenses;
-            }
+        if (this.selects.length < 2) {
+            return;
         }
 
-        const result = await Response.getElementsFromBackend<GetCartTitle>('GET', urlRequest, this.accessToken);
+        this.accessToken = await AuthTokens.ensureAccessToken();
+        const urlRequest = this.selects[0].value === 'income'
+            ? url.changeIncomes
+            : url.changeExpenses;
+
+        const result = await Response.getElementsFromBackend<GetCartTitle>(
+            'GET',
+            urlRequest,
+            this.accessToken
+        );
+
         if (Array.isArray(result)) {
             this.element = result;
         }
@@ -107,58 +104,49 @@ export class CreateGeneralOperation {
     }
 
     private createSelectOptionsCategory(): void {
-        if (this.selects) {
-            this.selects[1].querySelectorAll('option').forEach(option => {
-                if (option.value !== '') {
-                    option.remove();
-                }
-            })
-
-
-            for (let i = 0; i < this.element.length; i++) {
-                const option: HTMLOptionElement = document.createElement('option');
-                option.value = this.element[i].title;
-                option.id = this.element[i].id.toString();
-                option.innerText = this.element[i].title;
-                this.selects[1].appendChild(option);
-            }
+        if (this.selects.length < 2) {
+            return;
         }
+
+        this.selects[1].querySelectorAll('option:not(:first-child)').forEach(option => option.remove());
+
+        this.element.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.title;
+            option.id = String(category.id);
+            option.textContent = category.title;
+            this.selects[1].appendChild(option);
+        });
     }
 
     private async clickBtnCreate(): Promise<void> {
-        if (Validation.validationGenerals(this.selects, this.amountElement, this.dataElement, this.commentElement)) {
-            const body: EditCreateResponseBody = {
-                type: null,
-                amount: null,
-                date: null,
-                comment: null,
-                category_id: null,
-            }
+        if (!Validation.validationGenerals(
+            this.selects,
+            this.amountElement,
+            this.dataElement,
+            this.commentElement
+        )) {
+            return;
+        }
 
-            if (this.selects) {
-                body.type = (this.selects[0] as HTMLSelectElement).value;
-            }
-            if (this.amountElement) {
-                body.amount = +(this.amountElement as HTMLInputElement).value;
-            }
-            if (this.dataElement) {
-                body.date = (this.dataElement as HTMLInputElement).value;
-            }
-            if (this.commentElement) {
-                body.comment = (this.commentElement as HTMLInputElement).value;
-            }
-            if (this.selects) {
-                body.category_id = Number((this.selects[1] as HTMLSelectElement).options[(this.selects[1] as HTMLSelectElement).selectedIndex].id);
-            }
+        const selectedCategory = this.selects[1]?.selectedOptions[0];
+        const body: EditCreateResponseBody = {
+            type: this.selects[0]?.value ?? null,
+            amount: this.amountElement ? Number(this.amountElement.value) : null,
+            date: this.dataElement?.value ?? null,
+            comment: this.commentElement?.value.trim() ?? null,
+            category_id: selectedCategory?.id ? Number(selectedCategory.id) : null,
+        };
 
-            const result: EditCreateGeneralResultResponse | ErrorResultResponse = await Response.getElementsFromBackend('POST', this.urlRequest, this.accessToken, body);
-            if (result) {
-                this.openNewRouteAutomatic(this.url).then();
-            }
+        const result: EditCreateGeneralResultResponse | ErrorResultResponse =
+            await Response.getElementsFromBackend('POST', this.urlRequest, this.accessToken, body);
+
+        if (!('error' in result) || !result.error) {
+            await this.openNewRouteAutomatic(this.url);
         }
     }
 
-    private clickBtnCancel(): void {
-        this.openNewRouteAutomatic(this.url).then();
+    private async clickBtnCancel(): Promise<void> {
+        await this.openNewRouteAutomatic(this.url);
     }
 }

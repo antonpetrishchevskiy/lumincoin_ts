@@ -35,9 +35,10 @@ export class Period {
         }
 
         this.periodBtns.forEach(periodButton => {
-            periodButton.toggleAttribute('disabled', periodButton !== button);
+            periodButton.removeAttribute('disabled');
         });
 
+        button.setAttribute('disabled', '');
         this.activeButton = button;
         this.createUrlPeriod();
     }

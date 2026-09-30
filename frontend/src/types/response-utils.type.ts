@@ -1,14 +1,13 @@
-import {EditCreateResponseBody, LoginResponseBody, RefreshResponseBody, ResponseBody} from "./response-body.type";
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
 export type ResponseUtilsObjectType = {
-    method: string,
-    headers: ResponseUtilsObjectHeadersType,
+    method: HttpMethod;
+    headers: ResponseUtilsObjectHeadersType;
     body?: string;
-    params?: string;
-}
+};
 
 export type ResponseUtilsObjectHeadersType = {
-    "Accept": string,
-    'Content-Type': string,
-    'x-auth-token'?: string,
-}
+    Accept: string;
+    'Content-Type': string;
+    'x-auth-token'?: string;
+};

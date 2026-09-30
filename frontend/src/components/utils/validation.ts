@@ -54,7 +54,7 @@ export class Validation {
 
                 case 'password':
                     if (!primaryPassword) {
-                        if (!/^(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$/.test(input.value)) {
+                        if (!/^(?=.*\p{Ll})(?=.*\p{Lu})(?=.*\p{N})(?=.*[^\p{L}\p{N}]).{8,}$/u.test(input.value)) {
                             this.setInputState(input, false);
                             isValid = false;
                             return;
@@ -81,46 +81,56 @@ export class Validation {
             }
         });
 
-        if (!isValid) {
-            return null;
-        }
-
-        return data;
+        return isValid ? data : null;
     }
 
     static validationGenerals(
-        selects: NodeListOf<HTMLElement> | null,
-        amount: HTMLElement | null,
-        data: HTMLElement | null,
-        comment: HTMLElement | null
+        selects: NodeListOf<HTMLSelectElement> | null,
+        amount: HTMLInputElement | null,
+        data: HTMLInputElement | null,
+        comment: HTMLInputElement | null
     ): boolean {
         let isValid = true;
 
         selects?.forEach((select) => {
-            const valid = Boolean((select as HTMLSelectElement).value);
+            const valid = Boolean(select.value);
             this.setGeneralFieldState(select, valid);
             isValid = valid && isValid;
         });
 
         if (amount) {
-            const valid = Boolean((amount as HTMLInputElement).value);
+            const value = Number(amount.value);
+            const valid = Number.isFinite(value) && value > 0;
             this.setGeneralFieldState(amount, valid);
             isValid = valid && isValid;
         }
 
         if (data) {
-            const valid = /^\d{4}-\d{2}-\d{2}$/.test((data as HTMLInputElement).value);
+            const valid = this.isValidDate(data.value);
             this.setGeneralFieldState(data, valid);
             isValid = valid && isValid;
         }
 
         if (comment) {
-            const valid = Boolean((comment as HTMLInputElement).value.trim());
+            const valid = Boolean(comment.value.trim());
             this.setGeneralFieldState(comment, valid);
             isValid = valid && isValid;
         }
 
         return isValid;
+    }
+
+    private static isValidDate(value: string): boolean {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+            return false;
+        }
+
+        const [year, month, day] = value.split('-').map(Number);
+        const date = new Date(Date.UTC(year, month - 1, day));
+
+        return date.getUTCFullYear() === year &&
+            date.getUTCMonth() === month - 1 &&
+            date.getUTCDate() === day;
     }
 
     private static setInputState(input: HTMLInputElement, valid: boolean): void {

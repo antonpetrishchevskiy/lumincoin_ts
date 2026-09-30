@@ -1,17 +1,16 @@
-import {config} from "../../config/config";
 import {AuthTokens} from "../utils/auth-utils";
 import {OpenNewRouteAutomaticType} from "../../types/openNewRouteAutomatic.type";
+import {Response} from "../utils/response-utils";
 
 export class Logout {
     readonly openNewRouteAutomatic: OpenNewRouteAutomaticType;
     readonly logoutUserName: HTMLElement | null;
-    readonly logoutExitBtn: HTMLElement | null;
-    private isBlock = false;
+    readonly logoutExitBtn: HTMLButtonElement | null;
 
     constructor(openNewRouteAutomatic: OpenNewRouteAutomaticType) {
         this.openNewRouteAutomatic = openNewRouteAutomatic;
         this.logoutUserName = document.getElementById("layoutUserNameBlock");
-        this.logoutExitBtn = document.getElementById("exit-layout");
+        this.logoutExitBtn = document.getElementById("exit-layout") as HTMLButtonElement | null;
 
         this.logoutUserName?.addEventListener("click", () => this.showBtnExit());
         this.logoutExitBtn?.addEventListener("click", (event) => {
@@ -24,8 +23,7 @@ export class Logout {
             return;
         }
 
-        this.logoutExitBtn.style.display = this.isBlock ? "block" : "none";
-        this.isBlock = !this.isBlock;
+        this.logoutExitBtn.hidden = !this.logoutExitBtn.hidden;
     }
 
     private async logout(_event: Event): Promise<void> {
@@ -33,17 +31,13 @@ export class Logout {
 
         try {
             if (refreshToken) {
-                await fetch(config.api + '/logout', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({refreshToken}),
-                });
+                await Response.getElementsFromBackend(
+                    'POST',
+                    '/logout',
+                    null,
+                    {refreshToken}
+                );
             }
-        } catch (error) {
-            console.error('Logout request failed:', error);
         } finally {
             AuthTokens.clearSession();
             await this.openNewRouteAutomatic('/login');

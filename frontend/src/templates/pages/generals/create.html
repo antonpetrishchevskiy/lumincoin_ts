@@ -2,6 +2,7 @@
     <div class="wrap-container-title pt-5 fs-1 fw-medium">Создание дохода/расхода</div>
     <form class="mt-5">
         <div class="mb-3">
+            <label class="visually-hidden" for="typeCreateGeneralElement">Тип операции</label>
             <select class="form-control" id="typeCreateGeneralElement">
                 <option value="" disabled selected>Тип...</option>
                 <option value="expense">расход</option>
@@ -10,21 +11,22 @@
             <span class="error">Выберите тип</span>
         </div>
         <div class="mb-3">
+            <label class="visually-hidden" for="categoryCreateGeneralElement">Категория</label>
             <select class="form-control" id="categoryCreateGeneralElement">
                 <option value="" disabled selected>Категория...</option>
             </select>
             <span class="error">Выберите категорию</span>
         </div>
         <div class="mb-3">
-            <input type="text" class="form-control" id="sumCreateGeneralElement" placeholder="Сумма в $..." value="">
+            <input type="text" class="form-control" id="sumCreateGeneralElement" type="number" min="0.01" step="0.01" placeholder="Сумма в $..." value="">
             <span class="error">Введите сумму</span>
         </div>
         <div class="mb-3">
-            <input type="text" class="form-control" id="dataCreateGeneralElement" placeholder="Дата..." value="">
+            <input type="text" class="form-control" id="dataCreateGeneralElement" autocomplete="off" placeholder="Дата..." value="">
             <span class="error">Введите дату (ГГГГ-ММ-ДД)</span>
         </div>
         <div class="mb-3">
-            <input type="text" class="form-control" id="commentCreateGeneralElement" placeholder="Комментарий..." value="">
+            <input type="text" class="form-control" id="commentCreateGeneralElement" maxlength="500" placeholder="Комментарий..." value="">
             <span class="error">Введите комментарий</span>
         </div>
         <div class="create-buttons d-flex gap-3">

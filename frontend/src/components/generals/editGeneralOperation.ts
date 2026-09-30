@@ -13,99 +13,98 @@ export class EditGeneralOperation {
     readonly openNewRouteAutomatic: OpenNewRouteAutomaticType;
     readonly urlRequest: string;
     readonly url: string;
-    private generalElementId: string | null;
-    readonly selects: NodeListOf<HTMLElement> | null;
-    readonly editTypeElement: HTMLElement | null;
-    private editCategoryElement: HTMLElement | null;
+    private readonly generalElementId: string | null;
+    readonly selects: NodeListOf<HTMLSelectElement>;
+    readonly editTypeElement: HTMLSelectElement | null;
+    readonly editCategoryElement: HTMLSelectElement | null;
     readonly editAmountElement: HTMLInputElement | null;
     readonly editDateElement: HTMLInputElement | null;
     readonly editCommentElement: HTMLInputElement | null;
-    readonly saveBtn: HTMLElement | null;
-    readonly cancelBtn: HTMLElement | null;
-    private rowData: RowDataGeneralType | null;
+    readonly saveBtn: HTMLButtonElement | null;
+    readonly cancelBtn: HTMLButtonElement | null;
+    private rowData: RowDataGeneralType;
     private accessToken: string | null;
-    private element: GetCartTitle | [];
+    private element: GetCartTitle = [];
 
     constructor(openNewRouteAutomatic: OpenNewRouteAutomaticType, urlRequest: string, url: string) {
         this.openNewRouteAutomatic = openNewRouteAutomatic;
         this.urlRequest = urlRequest;
         this.url = url;
-        this.generalElementId = null;
-        this.accessToken = null;
-        this.rowData = null;
-        this.element = [];
+
+        const params = new URLSearchParams(window.location.search);
+        this.generalElementId = params.get('id');
+        this.rowData = {
+            type: params.get('type'),
+            category: params.get('category'),
+            amount: params.get('amount'),
+            date: params.get('date'),
+            comment: params.get('comment'),
+        };
+
+        this.accessToken = AuthTokens.getToken(AuthTokens.accessTokenKey);
         this.selects = document.querySelectorAll('select');
-        this.editTypeElement = this.selects[0];
-        this.editCategoryElement = this.selects[1];
+        this.editTypeElement = this.selects[0] ?? null;
+        this.editCategoryElement = this.selects[1] ?? null;
         this.editAmountElement = document.getElementById('sumEditGeneralElement') as HTMLInputElement | null;
         this.editDateElement = document.getElementById('dataEditGeneralElement') as HTMLInputElement | null;
         this.editCommentElement = document.getElementById('commentEditGeneralElement') as HTMLInputElement | null;
-        this.saveBtn = document.getElementById('saveBtn');
-        this.cancelBtn = document.getElementById('cancelBtn');
-        if (this.saveBtn) {
-            this.saveBtn.onclick = this.clickBtnEdit.bind(this);
-        }
-        if (this.cancelBtn) {
-            this.cancelBtn.onclick = this.clickBtnCancel.bind(this);
-        }
+        this.saveBtn = document.getElementById('saveBtn') as HTMLButtonElement | null;
+        this.cancelBtn = document.getElementById('cancelBtn') as HTMLButtonElement | null;
+
         this.editElement();
 
-        flatpickr("#dataEditGeneralElement", {
-            dateFormat: "Y-m-d",
+        this.saveBtn?.addEventListener('click', () => {
+            this.clickBtnEdit().catch(console.error);
+        });
+        this.cancelBtn?.addEventListener('click', () => {
+            this.clickBtnCancel().catch(console.error);
+        });
+
+        flatpickr('#dataEditGeneralElement', {
+            dateFormat: 'Y-m-d',
             locale: Russian,
         });
     }
 
     private editElement(): void {
-        const rowDataString: string | null = AuthTokens.getToken('rowData')
-        if (rowDataString) {
-            this.rowData = JSON.parse(rowDataString);
-        }
-        if (this.editTypeElement) {
-            Array.from((this.editTypeElement as HTMLSelectElement).options).forEach((item) => {
-
-                if (this.rowData && item.textContent === this.rowData.type) {
-                    item.setAttribute('selected', 'selected');
-                } else {
-                    item.removeAttribute('selected');
-                }
-                if (this.editTypeElement) {
-                    this.editTypeElement.setAttribute('disabled', 'disabled');
-                }
-            })
+        if (this.editTypeElement && this.rowData.type) {
+            this.editTypeElement.value = this.rowData.type === 'доход' ? 'income' : 'expense';
+            this.editTypeElement.disabled = true;
         }
 
-        this.addSelectCategoryValue().then();
+        this.addSelectCategoryValue().catch(console.error);
 
-        if (this.rowData) {
-            if (this.editAmountElement && this.rowData.amount) {
-                this.editAmountElement.value = this.rowData.amount;
-            }
-            if (this.editDateElement && this.rowData.date) {
-                this.editDateElement.value = this.rowData.date;
-            }
-
-            if (this.editCommentElement && this.rowData.comment) {
-                this.editCommentElement.value = this.rowData.comment;
-            }
+        if (this.editAmountElement && this.rowData.amount !== null) {
+            this.editAmountElement.value = this.rowData.amount;
+        }
+        if (this.editDateElement && this.rowData.date !== null) {
+            this.editDateElement.value = this.rowData.date;
+        }
+        if (this.editCommentElement && this.rowData.comment !== null) {
+            this.editCommentElement.value = this.rowData.comment;
         }
 
-        if (this.selects) {
-            this.selects[0].addEventListener('change', (e) => {
-                this.addSelectCategoryValue().then();
-            })
-        }
+        this.editTypeElement?.addEventListener('change', () => {
+            this.addSelectCategoryValue().catch(console.error);
+        });
     }
 
     private async addSelectCategoryValue(): Promise<void> {
-        let urlRequest = null;
-        this.accessToken = AuthTokens.getToken(AuthTokens.accessTokenKey);
-        if (this.selects && (this.selects[0] as HTMLInputElement).value === 'income') {
-            urlRequest = url.changeIncomes;
-        } else {
-            urlRequest = url.changeExpenses;
+        if (!this.editTypeElement || !this.editCategoryElement) {
+            return;
         }
-        const result = await Response.getElementsFromBackend<GetCartTitle>('GET', urlRequest, this.accessToken);
+
+        this.accessToken = await AuthTokens.ensureAccessToken();
+        const requestUrl = this.editTypeElement.value === 'income'
+            ? url.changeIncomes
+            : url.changeExpenses;
+
+        const result = await Response.getElementsFromBackend<GetCartTitle>(
+            'GET',
+            requestUrl,
+            this.accessToken
+        );
+
         if (Array.isArray(result)) {
             this.element = result;
         }
@@ -114,76 +113,55 @@ export class EditGeneralOperation {
     }
 
     private createSelectOptionsCategory(): void {
-        if (this.selects) {
-            this.selects[1].querySelectorAll('option').forEach(option => {
-                if (option.value !== '') {
-                    option.remove();
-                }
-            })
+        if (!this.editCategoryElement) {
+            return;
+        }
 
-            for (let i = 0; i < this.element.length; i++) {
-                const option = document.createElement('option');
-                option.value = this.element[i].title;
-                option.id = this.element[i].id.toString();
-                option.innerText = this.element[i].title;
-                this.selects[1].appendChild(option);
-            }
+        this.editCategoryElement.querySelectorAll('option:not(:first-child)').forEach(option => option.remove());
 
-            if (this.rowData && this.rowData.category === 'без категории') {
-                const option = document.createElement('option');
-                option.value = '';
-                option.innerText = 'без категории';
-                option.setAttribute('selected', 'selected');
-                this.selects[1].appendChild(option);
-            } else {
-                Array.from((this.editCategoryElement as HTMLSelectElement).options).forEach((item) => {
-                    if (this.rowData && item.textContent === this.rowData.category) {
-                        item.setAttribute('selected', 'selected');
-                    } else {
-                        item.removeAttribute('selected');
-                    }
-                })
-            }
+        this.element.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.title;
+            option.id = String(category.id);
+            option.textContent = category.title;
+            this.editCategoryElement?.appendChild(option);
+        });
+
+        if (this.rowData.category === 'без категории') {
+            this.editCategoryElement.value = '';
+        } else if (this.rowData.category) {
+            this.editCategoryElement.value = this.rowData.category;
         }
     }
 
     private async clickBtnEdit(): Promise<void> {
-        this.generalElementId = localStorage.getItem('idRowGenerals')
-        if (Validation.validationGenerals(this.selects, this.editAmountElement, this.editDateElement, this.editCommentElement)) {
-            const body: EditCreateResponseBody = {
-                type: null,
-                amount: null,
-                date: null,
-                comment: null,
-                category_id: null,
-            }
+        if (!this.generalElementId || !Validation.validationGenerals(
+            this.selects,
+            this.editAmountElement,
+            this.editDateElement,
+            this.editCommentElement
+        )) {
+            return;
+        }
 
-            if (this.selects) {
-                body.type = (this.selects[0] as HTMLSelectElement).value;
-            }
-            if (this.editAmountElement) {
-                body.amount = +this.editAmountElement.value;
-            }
-            if (this.editDateElement) {
-                body.date = this.editDateElement.value;
-            }
-            if (this.editCommentElement) {
-                body.comment = this.editCommentElement.value;
-            }
-            if (this.selects) {
-                body.category_id = Number((this.selects[1] as HTMLSelectElement).options[(this.selects[1] as HTMLSelectElement).selectedIndex].id);
-            }
+        const selectedCategory = this.editCategoryElement?.selectedOptions[0];
+        const body: EditCreateResponseBody = {
+            type: this.editTypeElement?.value ?? null,
+            amount: this.editAmountElement ? Number(this.editAmountElement.value) : null,
+            date: this.editDateElement?.value ?? null,
+            comment: this.editCommentElement?.value.trim() ?? null,
+            category_id: selectedCategory?.id ? Number(selectedCategory.id) : null,
+        };
 
+        const result: EditCreateGeneralResultResponse | ErrorResultResponse =
+            await Response.getElementsFromBackend('PUT', this.urlRequest + this.generalElementId, this.accessToken, body);
 
-            const result: EditCreateGeneralResultResponse | ErrorResultResponse = await Response.getElementsFromBackend('PUT', this.urlRequest + this.generalElementId, this.accessToken, (body as EditCreateResponseBody));
-
-            if (result) {
-                this.openNewRouteAutomatic(this.url).then();
-            }
+        if (!('error' in result) || !result.error) {
+            await this.openNewRouteAutomatic(this.url);
         }
     }
 
-    clickBtnCancel() {
-        this.openNewRouteAutomatic(this.url).then();
+    private async clickBtnCancel(): Promise<void> {
+        await this.openNewRouteAutomatic(this.url);
     }
 }

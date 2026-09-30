@@ -2,7 +2,8 @@
     <div class="wrap-container-title pt-5 fs-1 fw-medium">Создание категории расходов</div>
     <form class="mt-5">
         <div class="mb-3">
-            <input type="text" class="form-control" id="nameCreateIncomeElement" placeholder="Название...">
+            <label class="visually-hidden" for="nameCreateIncomeElement">Название категории</label>
+            <input type="text" class="form-control" id="nameCreateIncomeElement" placeholder="Название..." maxlength="100" required>
         </div>
         <div class="create-buttons d-flex gap-3">
             <button type="button" class="btn btn-success" id="createCartBtn">Создать</button>

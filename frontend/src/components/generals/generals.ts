@@ -4,58 +4,30 @@ import {url} from "../../config/config";
 import {Period} from "../utils/period";
 import {GetDataUtils} from "../utils/getData-utils";
 import {main} from "../main";
-import {RowDataGeneralType} from "../../types/general.type";
 import {EditCreateGeneralResultResponse, ErrorResultResponse} from "../../types/result-response.type";
 
 export class Generals {
-    private btnsCreate: NodeListOf<HTMLElement> | null;
     readonly todayData: string | null;
     readonly period: string | null;
     private result: EditCreateGeneralResultResponse[] | ErrorResultResponse | null;
     readonly wrapperTable: HTMLElement | null;
-    private editBtns: NodeListOf<HTMLElement> | null;
-    private deleteBtns: NodeListOf<HTMLElement> | null;
 
     constructor(period: string | null = null) {
-        this.btnsCreate = document.querySelectorAll('.btn-create');
-        this.btnsCreate.forEach(btn => {
-            btn.onclick = function (event: Event) {
-                const eventTarget = event.target as HTMLElement | null;
-                if (eventTarget) {
-                    const AttributeTypeValue: string | null = eventTarget.getAttribute('type');
-                    if (AttributeTypeValue) {
-                        AuthTokens.setToken('createBtn', AttributeTypeValue);
-                    }
-                }
-
-            };
-        })
         this.todayData = GetDataUtils.getData();
         this.period = period ? period : `?period=${this.todayData}`;
         this.result = null;
         this.wrapperTable = document.getElementById("wrapperGeneralTable");
         this.init().then();
-        this.editBtns = null;
-        this.deleteBtns = null;
         new Period();
         if (location.pathname === '/') {
             window.onresize = this.resize.bind(this);
         }
     }
 
-    async init() {
+    private async init(): Promise<void> {
         await this.getGeneralsOperationsFromBackend().then();
         if (location.pathname === "/generals") {
             this.createTableWithOperations();
-            this.editBtns = document.querySelectorAll('.editGeneralOperation')
-            this.editBtns.forEach(editBtn => {
-                editBtn.onclick = this.editGeneralOperation.bind(this);
-            })
-
-            this.deleteBtns = document.querySelectorAll('.deleteGeneralOperation')
-            this.deleteBtns.forEach(deleteBtn => {
-                deleteBtn.onclick = this.getIdClickElement.bind(this);
-            })
 
         } else if (location.pathname === "/") {
             if(main && this.result) {
@@ -64,18 +36,18 @@ export class Generals {
         }
     }
 
-    async getGeneralsOperationsFromBackend() {
+    private async getGeneralsOperationsFromBackend(): Promise<void> {
         const accessToken = AuthTokens.getToken(AuthTokens.accessTokenKey);
         if (!accessToken) {
             console.log('No access token');
             return;
         }
 
-        const result = await Response.getElementsFromBackend('GET', url.urlGenerals + this.period, accessToken);
+        const result = await Response.getElementsFromBackend<EditCreateGeneralResultResponse[] | ErrorResultResponse>('GET', url.urlGenerals + this.period, accessToken);
         this.result = result;
 
-        if (result && result.error) {
-            console.log(`Error: ${result.message}`)
+        if ('error' in result) {
+            console.log(`Error: ${result.message}`);
         }
     }
 
@@ -148,8 +120,10 @@ export class Generals {
 
                 const actionsCell = document.createElement('td');
                 const deleteLink = document.createElement('a');
-                deleteLink.href = '/generals/popup';
+                const deleteParams = new URLSearchParams({id: String(item.id ?? '')});
+                deleteLink.href = '/generals/popup?' + deleteParams.toString();
                 deleteLink.classList.add('me-2', 'deleteGeneralOperation');
+                deleteLink.setAttribute('aria-label', 'Удалить операцию');
                 deleteLink.innerHTML = '<svg width="14" height="15" viewBox="0 0 14 15" fill="none" xmlns="http://www.w3.org/2000/svg">\n' +
                     '                        <path d="M4.5 5.5C4.77614 5.5 5 5.72386 5 6V12C5 12.2761 4.77614 12.5 4.5 12.5C4.22386 12.5 4 12.2761 4 12V6C4 5.72386 4.22386 5.5 4.5 5.5Z"\n' +
                     '                              fill="black"/>\n' +
@@ -166,8 +140,17 @@ export class Generals {
                 actionsCell.appendChild(deleteLink);
 
                 const editLink = document.createElement('a');
-                editLink.href = '/generals/edit';
+                const editParams = new URLSearchParams({
+                    id: String(item.id ?? ''),
+                    type: item.type ?? '',
+                    category: item.category ?? '',
+                    amount: String(item.amount ?? ''),
+                    date: item.date ?? '',
+                    comment: item.comment ?? '',
+                });
+                editLink.href = '/generals/edit?' + editParams.toString();
                 editLink.classList.add('editGeneralOperation');
+                editLink.setAttribute('aria-label', 'Редактировать операцию');
                 editLink.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">\n' +
                     '                        <path d="M12.1465 0.146447C12.3417 -0.0488155 12.6583 -0.0488155 12.8536 0.146447L15.8536 3.14645C16.0488 ' +
                     '                          3.34171 16.0488 3.65829 15.8536 3.85355L5.85357 13.8536C5.80569 13.9014 5.74858 13.9391 5.68571 13.9642L0.68571 15.9642C0.500001 ' +
@@ -190,55 +173,6 @@ export class Generals {
 
         if (this.wrapperTable) {
             this.wrapperTable.appendChild(table);
-        }
-    }
-
-    private editGeneralOperation(event: Event): void {
-        const rowElement = event.target as HTMLElement;
-        const row = rowElement.closest('.table-row');
-
-        if(row) {
-            const rowData: RowDataGeneralType = {
-                type: null,
-                category: null,
-                amount: null,
-                date: null,
-                comment: null,
-            }
-            const typeElement: HTMLElement | null = row.querySelector('.table-row-type');
-            const categoryElement: HTMLElement | null = row.querySelector('.table-row-category');
-            const amountElement: HTMLElement | null = row.querySelector('.table-row-amount')
-            const dateElement: HTMLElement | null = row.querySelector('.table-row-date')
-            const commentElement: HTMLElement | null = row.querySelector('.table-row-comment')
-            if(typeElement) {
-                rowData.type = typeElement.innerText;
-            }
-            if(categoryElement) {
-                rowData.category = categoryElement.innerText;
-            }
-            if(amountElement) {
-                rowData.amount = amountElement.innerText;
-            }
-            if(dateElement) {
-                rowData.date = dateElement.innerText;
-            }
-            if(commentElement) {
-                rowData.comment = commentElement.innerText;
-            }
-
-            AuthTokens.setToken('rowData', JSON.stringify(rowData));
-            AuthTokens.setToken('idRowGenerals', row.getAttribute('id') as string);
-        }
-    }
-
-    private getIdClickElement(event: Event): void {
-        event.preventDefault();
-        const idRowElement: HTMLElement | null = (event.target as HTMLElement).closest('.table-row') as HTMLElement | null;
-        if(idRowElement) {
-            const idRow: string | null = idRowElement.getAttribute('id');
-            if(idRow) {
-                AuthTokens.setToken('idRowGenerals', idRow)
-            }
         }
     }
 
