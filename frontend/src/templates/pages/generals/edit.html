@@ -18,7 +18,7 @@
             <span class="error">Заполните категорию</span>
         </div>
         <div class="mb-3">
-            <input type="text" class="form-control" id="sumEditGeneralElement" type="number" min="0.01" step="0.01" placeholder="Сумма в $..." value="500$">
+            <input type="number" class="form-control" id="sumEditGeneralElement" min="0.01" step="0.01" placeholder="Сумма в $..." value="">
             <span class="error">Заполните сумму</span>
         </div>
         <div class="mb-3">
@@ -29,6 +29,7 @@
             <input type="text" class="form-control" id="commentEditGeneralElement" maxlength="500" placeholder="Комментарий..." value="">
             <span class="error">Заполните комментарий</span>
         </div>
+        <div id="editGeneralError" class="alert alert-danger d-none mt-3" role="alert"></div>
         <div class="create-buttons d-flex gap-3">
             <button type="button" class="btn btn-success" id="saveBtn">Сохранить</button>
             <button type="button" class="btn btn-danger" id="cancelBtn">Отмена</button>

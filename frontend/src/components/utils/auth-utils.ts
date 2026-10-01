@@ -16,23 +16,26 @@ export class AuthTokens {
         promise: null,
     };
 
-    static setToken(tokenName: string, tokenValue: string): void {
-        localStorage.setItem(tokenName, tokenValue);
+    static setToken(tokenName: string, tokenValue: string, persistent = true): void {
+        const storage = persistent ? localStorage : sessionStorage;
+        storage.setItem(tokenName, tokenValue);
     }
 
     static getToken(tokenName: string): string | null {
-        return localStorage.getItem(tokenName);
+        return localStorage.getItem(tokenName) ?? sessionStorage.getItem(tokenName);
     }
 
     static removeToken(tokenName: string): void {
         localStorage.removeItem(tokenName);
+        sessionStorage.removeItem(tokenName);
     }
 
     static setSession(result: LoginResultResponse, rememberMe: boolean): void {
-        this.setToken(this.accessTokenKey, result.tokens.accessToken);
-        this.setToken(this.refreshTokenKey, result.tokens.refreshToken);
-        this.setToken(this.userInfoTokenKey, JSON.stringify(result.user));
-        this.setToken(this.rememberMeKey, String(rememberMe));
+        this.clearSession();
+        this.setToken(this.accessTokenKey, result.tokens.accessToken, rememberMe);
+        this.setToken(this.refreshTokenKey, result.tokens.refreshToken, rememberMe);
+        this.setToken(this.userInfoTokenKey, JSON.stringify(result.user), rememberMe);
+        this.setToken(this.rememberMeKey, String(rememberMe), rememberMe);
     }
 
     static clearSession(): void {

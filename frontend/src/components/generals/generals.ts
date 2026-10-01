@@ -75,11 +75,11 @@ export class Generals {
         const data = this.result;
 
         if(data && !('error' in data)) {
-            data.sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
+            const sortedData = [...data].sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
 
             let numGeneralRow: number = 1;
 
-            data.forEach(item => {
+            sortedData.forEach(item => {
                 const row: HTMLElement = document.createElement('tr');
                 row.classList.add('table-row');
                 if(item.id) {
@@ -107,11 +107,12 @@ export class Generals {
 
                 (['category', 'amount', 'date', 'comment'] as (keyof EditCreateGeneralResultResponse)[]).forEach((key, index) => {
                     const td = document.createElement('td');
-                    if (item[key] === undefined) {
-                        td.textContent = 'без категории';
-                    } else {
-                        td.textContent = item[key] as string;
-                    }
+                    const value = item[key];
+                    td.textContent = key === 'category' && value == null
+                        ? 'без категории'
+                        : value == null
+                            ? ''
+                            : String(value);
 
                     const classes = ['table-row-category', 'table-row-amount', 'table-row-date', 'table-row-comment']
                     td.classList.add(classes[index]);
@@ -140,15 +141,11 @@ export class Generals {
                 actionsCell.appendChild(deleteLink);
 
                 const editLink = document.createElement('a');
-                const editParams = new URLSearchParams({
-                    id: String(item.id ?? ''),
-                    type: item.type ?? '',
-                    category: item.category ?? '',
-                    amount: String(item.amount ?? ''),
-                    date: item.date ?? '',
-                    comment: item.comment ?? '',
-                });
-                editLink.href = '/generals/edit?' + editParams.toString();
+                const editId = String(item.id ?? '');
+                if (editId) {
+                    sessionStorage.setItem(`general-operation-edit-${editId}`, JSON.stringify(item));
+                }
+                editLink.href = '/generals/edit?id=' + encodeURIComponent(editId);
                 editLink.classList.add('editGeneralOperation');
                 editLink.setAttribute('aria-label', 'Редактировать операцию');
                 editLink.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">\n' +

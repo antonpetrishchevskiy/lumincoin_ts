@@ -22,6 +22,7 @@ export class EditGeneralOperation {
     readonly editCommentElement: HTMLInputElement | null;
     readonly saveBtn: HTMLButtonElement | null;
     readonly cancelBtn: HTMLButtonElement | null;
+    readonly editErrorElement: HTMLElement | null;
     private rowData: RowDataGeneralType;
     private accessToken: string | null;
     private element: GetCartTitle = [];
@@ -33,13 +34,19 @@ export class EditGeneralOperation {
 
         const params = new URLSearchParams(window.location.search);
         this.generalElementId = params.get('id');
-        this.rowData = {
-            type: params.get('type'),
-            category: params.get('category'),
-            amount: params.get('amount'),
-            date: params.get('date'),
-            comment: params.get('comment'),
-        };
+        const storedOperation = this.generalElementId
+            ? sessionStorage.getItem(`general-operation-edit-${this.generalElementId}`)
+            : null;
+
+        this.rowData = storedOperation
+            ? JSON.parse(storedOperation) as RowDataGeneralType
+            : {
+                type: null,
+                category: null,
+                amount: null,
+                date: null,
+                comment: null,
+            };
 
         this.accessToken = AuthTokens.getToken(AuthTokens.accessTokenKey);
         this.selects = document.querySelectorAll('select');
@@ -50,6 +57,7 @@ export class EditGeneralOperation {
         this.editCommentElement = document.getElementById('commentEditGeneralElement') as HTMLInputElement | null;
         this.saveBtn = document.getElementById('saveBtn') as HTMLButtonElement | null;
         this.cancelBtn = document.getElementById('cancelBtn') as HTMLButtonElement | null;
+        this.editErrorElement = document.getElementById('editGeneralError');
 
         this.editElement();
 
@@ -67,8 +75,16 @@ export class EditGeneralOperation {
     }
 
     private editElement(): void {
-        if (this.editTypeElement && this.rowData.type) {
-            this.editTypeElement.value = this.rowData.type === 'доход' ? 'income' : 'expense';
+        if (!this.generalElementId || !this.rowData.type) {
+            this.showError('Не удалось загрузить данные операции. Вернитесь к списку и откройте редактирование ещё раз.');
+            if (this.saveBtn) {
+                this.saveBtn.disabled = true;
+            }
+            return;
+        }
+
+        if (this.editTypeElement) {
+            this.editTypeElement.value = this.rowData.type;
             this.editTypeElement.disabled = true;
         }
 
@@ -121,16 +137,18 @@ export class EditGeneralOperation {
 
         this.element.forEach(category => {
             const option = document.createElement('option');
-            option.value = category.title;
-            option.id = String(category.id);
+            option.value = String(category.id);
             option.textContent = category.title;
             this.editCategoryElement?.appendChild(option);
         });
 
-        if (this.rowData.category === 'без категории') {
+        if (this.rowData.category === 'без категории' || !this.rowData.category) {
             this.editCategoryElement.value = '';
-        } else if (this.rowData.category) {
-            this.editCategoryElement.value = this.rowData.category;
+        } else {
+            const category = this.element.find(item => item.title === this.rowData.category);
+            if (category) {
+                this.editCategoryElement.value = String(category.id);
+            }
         }
     }
 
@@ -143,6 +161,8 @@ export class EditGeneralOperation {
         )) {
             return;
         }
+
+        this.showError('');
 
         const selectedCategory = this.editCategoryElement?.selectedOptions[0];
         const body: EditCreateResponseBody = {
@@ -157,11 +177,27 @@ export class EditGeneralOperation {
             await Response.getElementsFromBackend('PUT', this.urlRequest + this.generalElementId, this.accessToken, body);
 
         if (!('error' in result) || !result.error) {
+            sessionStorage.removeItem(`general-operation-edit-${this.generalElementId}`);
             await this.openNewRouteAutomatic(this.url);
+            return;
         }
+
+        this.showError(result.message || 'Не удалось сохранить операцию. Попробуйте ещё раз.');
+    }
+
+    private showError(message: string): void {
+        if (!this.editErrorElement) {
+            return;
+        }
+
+        this.editErrorElement.textContent = message;
+        this.editErrorElement.classList.toggle('d-none', !message);
     }
 
     private async clickBtnCancel(): Promise<void> {
+        if (this.generalElementId) {
+            sessionStorage.removeItem(`general-operation-edit-${this.generalElementId}`);
+        }
         await this.openNewRouteAutomatic(this.url);
     }
 }

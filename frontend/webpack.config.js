@@ -39,6 +39,9 @@ module.exports = {
     resolve: {
         extensions: ['.tsx', '.ts', '.js'],
     },
+    devServer: {
+        historyApiFallback: true,
+    },
     output: {
         clean: true,
         filename: 'index.js',
